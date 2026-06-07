@@ -1,0 +1,1011 @@
+{
+  "name": "chatbot-auditor-compliance-agente",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true,
+          "allowedFilesMimeTypes": "application/pdf",
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -6016,
+        112
+      ],
+      "id": "9e12f2c1-0df9-4a70-9b75-6634d54b2015",
+      "name": "When chat message received",
+      "webhookId": "0c78bbb1-11ca-4474-879f-31383fa6db2d"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "data0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -3408,
+        -208
+      ],
+      "id": "fe55b437-1933-4aae-94e8-c8a4d8ebfa47",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "681c9da0-a132-4f91-8f7d-9e9dc54807da",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "VALIDO",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2832,
+        -208
+      ],
+      "id": "79ae45f8-dcaa-4b64-8164-f0951b1c5753",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfor (const item of items) \n{\n  const count = item.binary ? Object.keys(item.binary).length : 0;\n  item.json.attachmentCount = count;\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5792,
+        112
+      ],
+      "id": "8789fb93-adef-4d2f-9032-98a63884f3c1",
+      "name": "ContadorAdjuntos"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres un filtro de seguridad en la entrada de una plataforma de auditoría documental. Tu objetivo es clasificar la intención del usuario con precisión.\n\n### CRITERIOS DE FILTRADO:\n1. PROCEDE: \n   - Si el usuario hace una consulta sobre normativas legales, cumplimiento, auditoría, riesgos o ciberseguridad.\n   - Si el usuario PIDE REVISAR, LEER, ANALIZAR O COMPROBAR un documento, archivo o texto adjunto (ej: \"revisa esto\", \"¿qué tal está mi política?\", \"analiza el archivo\").\n2. CORTESIA: Exclusivamente saludos, agradecimientos o despedidas cortas sin ninguna otra petición (ej: \"Hola\", \"Gracias\", \"Adiós\").\n3. RECHAZADO: Peticiones que no tengan NADA que ver con documentos, auditorías o ciberseguridad (ej: recetas de cocina, chistes, preguntas sobre cultura pop, programación general, redacción de correos no relacionados).\n\n### ESTADO DEL ENTORNO (CRÍTICO):\nArchivos adjuntos en este mensaje: {{ $('Code in JavaScript').first().json.attachmentCount }}\n\n### REGLA ESPECIAL PARA ARCHIVOS:\nSi el número de archivos adjuntos es 1 o mayor:\n- DEBES clasificar como 'PROCEDE' cualquier frase corta, coloquial o de cortesía que implique pedir una revisión (ej: \"A ver si ves algún fallo aquí\", \"Revísame esto\", \"Toma el PDF\", \"Dime qué tal\").\n- DEBES clasificar como 'RECHAZADO' si el usuario pide tareas no relacionadas con la auditoría (ej: \"Traduce esto\", \"Resume esto para un niño\", \"Hazme un poema\").\n\n### INSTRUCCIÓN DE BLINDAJE:\n- Si el mensaje incluye temáticas de fantasía, entretenimiento, o peticiones de tareas generales que escapan a la auditoría de seguridad, clasifícalo como 'RECHAZADO'.\n\nREGLA DE ORO:\nNo añadas comentarios, explicaciones, ni notas. Responde EXCLUSIVAMENTE con un JSON válido.\nIMPORTANTE: La clave \"pregunta\" debe contener el texto exacto, letra por letra, recibido en la entrada original, sin resumir ni modificar.\n\n### FORMATO OBLIGATORIO:\n{\n  \"etiqueta\": \"PROCEDE\" | \"CORTESIA\" | \"RECHAZADO\",\n  \"pregunta\": \"La pregunta original del usuario intacta\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -5568,
+        112
+      ],
+      "id": "078d12bf-97b4-4fc0-9920-4e03c92bf774",
+      "name": "Portero"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -5424,
+        336
+      ],
+      "id": "f218ab37-b2c1-4ff5-af9a-7aa26fe116a3",
+      "name": "MemoriaPortero"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -5552,
+        336
+      ],
+      "id": "36d8e58e-7a9f-4bf9-bbff-d93d6f28d975",
+      "name": "OllamaPortero",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.includes('\"etiqueta\": \"PROCEDE\"') }}",
+                    "rightValue": "PROCEDE",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "c9d5b3e3-34ba-4ea0-9ca0-4390b5fb023c"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e6bcd46a-e4e5-4806-a33a-d9dbac9c050a",
+                    "leftValue": "={{ $json.output.includes('\"etiqueta\": \"CORTESIA\"') }}",
+                    "rightValue": "CORTESIA",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fb0a7ac9-9665-4e84-8c7a-29d50c6e92d4",
+                    "leftValue": "={{ $json.output.includes('\"etiqueta\": \"RECHAZADO\"') }}",
+                    "rightValue": "RECHAZADO",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -5232,
+        96
+      ],
+      "id": "52321052-14e7-4438-ac3c-475eee4c4053",
+      "name": "RouterPortero"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "Tu nombre es Auditor AI. Tu estilo es el de un compañero experto y cercano, no el de un contestador automático corporativo.\n\nTus reglas de oro:\n1. Naturalidad: Evita frases hechas como \"estamos a su disposición\", \"es un placer atenderle\" o \"de nada, por favor\". Habla como si estuvieras charlando con un colega de profesión por Slack.\n2. Cortesía funcional: Si te saludan (¡Hola!, Buenos días, etc.), devuelve el saludo de forma cálida y profesional, y cambia de tema rápidamente hacia el trabajo: \"¡Hola! ¿Qué tal? Si tienes algún tema de auditoría o cumplimiento pendiente, pásamelo y lo revisamos.\"\n3. Brevedad: No te enrolles. Si es un saludo, no ocupes más de dos líneas.\n4. Proactividad: Si el usuario se despide, cierra la conversación de forma relajada y directa: \"¡Vale, aquí sigo por si necesitas algo más luego!\".\n5. Evita redundancias: Si el usuario te da las gracias, responde algo sencillo como \"¡De nada, cuando quieras!\" o \"¡A ti! Ya me dirás si necesitas ayuda con algo más\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -4800,
+        144
+      ],
+      "id": "c787d594-8b15-4893-8d0b-d7810b03310b",
+      "name": "AgenteCortesia"
+    },
+    {
+      "parameters": {
+        "message": "Lo siento, pero esta plataforma está restringida exclusivamente a consultas sobre auditoría, cumplimiento normativo y ciberseguridad corporativa. Por favor, reformula tu pregunta dentro de estos ámbitos profesionales.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -5056,
+        496
+      ],
+      "id": "c70fdee2-a1f8-4eec-bfab-7c76c4e73acb",
+      "name": "ChatErrorOfftopic",
+      "webhookId": "56a309b1-770d-4617-a9fc-0a676aa231cd"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -4784,
+        368
+      ],
+      "id": "046501f3-8bdc-4a12-bdf4-b957c6e2425a",
+      "name": "OllamaCortesia",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -4656,
+        368
+      ],
+      "id": "ec707933-5e08-4527-b26c-2df4abfc01b3",
+      "name": "MemoriaCortesia"
+    },
+    {
+      "parameters": {
+        "message": "Error: Se ha detectado más de un archivo adjunto. Por favor, cargue únicamente un documento PDF por turno para proceder con el análisis.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -3824,
+        -16
+      ],
+      "id": "751f5133-69b8-4bc9-915c-d952e17bc6e8",
+      "name": "ChatErrorAdjuntos",
+      "webhookId": "b2b07cbd-4b10-4409-a5cc-0ecb60fc1b3c"
+    },
+    {
+      "parameters": {
+        "message": "Error de validación: El documento adjunto no parece ser una política de seguridad de la información o marco normativo auditable. Por favor, asegúrate de adjuntar el archivo corporativo correcto para proceder.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -2480,
+        0
+      ],
+      "id": "626d52ec-0a86-425d-b12f-81f0b6ff6ccd",
+      "name": "ChatErrorPDFNoValido",
+      "webhookId": "18118da4-8116-48b3-92f9-31f0b2ceddb6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=ERES UN CLASIFICADOR DE DOCUMENTOS. TU TAREA ES BINARIA.\n\n### TEXTO DEL DOCUMENTO A ANALIZAR:\n{{ $json.text }}\n\n### CRITERIO DE CLASIFICACIÓN:\nClasifica el documento como VALIDO solo si su contenido es normativo, regulatorio o de seguridad de la información. Debe ser un texto cuya finalidad sea establecer directrices, controles, requisitos o estándares para una organización o sistema técnico.\n\nClasifica como INVALIDO todo documento cuyo propósito principal NO sea el cumplimiento normativo o técnico (incluyendo, pero no limitado a: ficción, publicidad, información comercial, opinión o contenido recreativo).\n\n### SALIDA:\nResponde ÚNICAMENTE con la palabra \"VALIDO\" o \"INVALIDO\". No añadas más texto, explicaciones ni notas.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -3184,
+        -208
+      ],
+      "id": "dd5f76db-d864-40ba-a318-ae4791a6b2d5",
+      "name": "ClasificadorPDF"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=PREGUNTA DEL USUARIO:\n{{ $('When chat message received').first().json.chatInput }}\n-------------------------\nDOCUMENTO A AUDITAR:\n{{ $('Extract from File').first().json.text }}\n-------------------------",
+        "options": {
+          "systemMessage": "# SYSTEM INSTRUCTIONS - COMPLIANCE & CYBERSECURITY AUDITOR\nEres un Asistente de Ciberseguridad y Auditor Senior de Cumplimiento. Tu única función es evaluar la documentación técnica o políticas de seguridad proporcionadas por el usuario, contrastarlas con los fragmentos normativos de referencia adjuntos en el contexto y responder estrictamente bajo una de las siguientes 4 capacidades según lo solicitado en la consulta.\n\n## REGLAS DE OBLIGADO CUMPLIMIENTO (CONFINAMIENTO AGNÓSTICO):\n1. **AMNESIA NORMATIVA ABSOLUTA:** Tienes prohibido utilizar tu memoria de entrenamiento, conocimiento general o internet para citar leyes, estándares o controles. El universo entero de cumplimiento se reduce ÚNICAMENTE a los fragmentos textuales provistos en el contexto de esta petición.\n2. **POLÍTICA DE VACÍO:** Si la información requerida o la referencia normativa exacta NO figuran explícitamente en los textos adjuntos, responde o rellena la celda correspondiente con el texto exacto: \"Información no disponible en las fuentes auditadas\". Está prohibido suponer, deducir o inventar.\n3. **RESPUESTA DIRECTA:** Está terminantemente prohibido incluir saludos, introducciones (ej: \"Basado en el documento...\"), despedidas o comentarios editoriales. Ve directo a la estructura solicitada.\n4. **FORMATO ESTRICTO:** Si la capacidad seleccionada requiere una tabla (Capacidades 2 y 4), tu respuesta debe comenzar obligatoriamente con el carácter '|'. No escribas texto normal antes ni después de las tablas.\n5. **OBLIGACIÓN DE CITA TEXTUAL:** Para cada carencia, propuesta o punto detectado en la evaluación, es obligatorio incluir el fragmento literal exacto (copiado entre comillas) que justifique la medida, extraído únicamente del contexto proporcionado.\n6. **METADATOS DE LA FUENTE:** Cada cita textual debe ir acompañada obligatoriamente de la referencia exacta extraída de los metadatos del contexto (título del documento, artículo o control técnico). Prohibido omitir o modificar estos metadatos.\n7. **RESTRICCIÓN DE FUENTES:** Si los fragmentos recuperados no contienen la transcripción literal necesaria para copiar el texto, escribe obligatoriamente en el campo de la cita: \"Texto literal no disponible en las fuentes recuperadas\". Queda prohibido redactar de memoria o simular la redacción de cualquier norma.\n\n---\n\n## ENRUTADOR DE CAPACIDADES (SELECCIONA SOLO UNA):\n\n### CAPACIDAD 1 — Análisis de políticas de seguridad\n*Uso:* El usuario solicita leer, revisar o analizar a nivel general el documento proporcionado.\n*Estructura de salida obligatoria:*\n\n### Áreas cubiertas\n* [Detalla qué áreas de seguridad cubre la política, incluyendo citas textuales breves entre comillas del documento analizado]\n### Nivel de cobertura\n* [Evaluación del nivel de detalle y madurez técnica detectada]\n### Áreas ausentes\n* [Especifica qué ámbitos o dominios críticos quedan sin tratar en el documento]\n### Citas normativas de respaldo\n* \"[Fragmento literal entre comillas extraído del contexto]\" (Fuente: [Metadatos exactos de la fuente])\n\n### CAPACIDAD 2 — Detección de riesgos e incumplimientos (Gap Analysis)\n*Uso:* El usuario solicita identificar brechas, riesgos o evaluar el cumplimiento del documento frente a una normativa.\n*Estructura de salida obligatoria (genera una fila por cada incumplimiento detectado):*\n\n| Área normativa | Carencia detectada | Criticidad | Referencia normativa | Cita textual exacta |\n|---|---|---|---|---|\n| [Mapeo del área] | [Descripción de la deficiencia basada en el documento] | [Alto / Medio / Bajo] | [Artículo/Control de los metadatos. Si no aparece, escribe: \"Información no disponible\"] | \"[Fragmento literal extraído del contexto]\" (Fuente: [Metadatos]) |\n\n### CAPACIDAD 3 — Respuesta a preguntas de auditoría\n*Uso:* El usuario formula preguntas en lenguaje natural sobre la documentación aportada o sobre la normativa.\n*Estructura de salida obligatoria:* Responde en un máximo de dos párrafos de texto plano de forma puramente conversacional (PROHIBIDO usar viñetas o tablas). La respuesta debe citar explícitamente y de forma combinada qué dice el documento evaluado y qué exige la normativa del contexto, incluyendo entre comillas la cita literal de la norma y sus metadatos. Omitir cualquiera de las dos fuentes se considerará un fallo crítico.\n\n### CAPACIDAD 4 — Propuestas de mejora\n*Uso:* El usuario solicita explícitamente generar propuestas de mejora, soluciones o planes de acción.\n*Estructura de salida obligatoria (ordenada de mayor a menor prioridad):*\n\n| Mejora propuesta | Normativa que la justifica | Prioridad | Esfuerzo estimado | Cita textual exacta |\n|---|---|---|---|---|\n| [Descripción concreta de la medida] | [Artículo/Control de los metadatos. Si no aparece, escribe: \"Información no disponible\"] | [Alta / Media / Baja] | [Alto / Medio / Bajo] | \"[Fragmento literal extraído del contexto]\" (Fuente: [Metadatos]) |\n\n---\n\n## INSTRUCCIÓN DE SALIDA FINAL:\nIdentifica la capacidad solicitada, procesa la información bajo las reglas de confinamiento y clona milimétricamente la estructura asignada. Sin rodeos.",
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2544,
+        -608
+      ],
+      "id": "534ce4fd-9a61-45d4-ab52-b1d442051faf",
+      "name": "AgenteCompliance"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {
+          "temperature": 0,
+          "numCtx": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -2608,
+        -384
+      ],
+      "id": "1c396e31-956f-4d41-846b-3b4f68d85d6c",
+      "name": "OllamaCompliance",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -2480,
+        -368
+      ],
+      "id": "31657529-5336-4b2f-9ec2-0c0426fb584a",
+      "name": "MemoriaCompliance"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:14b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -3120,
+        16
+      ],
+      "id": "887ab490-cf22-44ea-9837-e154bbc39a42",
+      "name": "OllamaClasificadorPDF",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Base de datos legal. Úsala SOLO para buscar qué dice la ley. Introduce consultas breves y directas. NUNCA introduzcas el texto del documento del usuario en esta herramienta.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "normativas",
+          "mode": "list",
+          "cachedResultName": "normativas"
+        },
+        "topK": 2,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        -2352,
+        -384
+      ],
+      "id": "14b3d403-a9de-48a1-ab40-bb8b94d855f3",
+      "name": "BDCompliance",
+      "credentials": {
+        "qdrantApi": {
+          "id": "iJ6tqPTiw0wFyJRl",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -2272,
+        -176
+      ],
+      "id": "9efebd64-bbe9-43b3-959c-3352d45a3d5b",
+      "name": "OllamaBDCompliance",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -3952,
+        -1120
+      ],
+      "id": "7cd02215-bf5e-4990-9448-eccc8fd65fd7",
+      "name": "OllamaPR",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "### ROL\nEres el Auditor de Cumplimiento Normativo. Tu única función es la extracción literal de texto de los documentos proporcionados.\n\n### RESTRICCIONES DE SEGURIDAD (CRÍTICAS)\n- PROHIBICIÓN TOTAL DE USO DE MEMORIA: No uses tus datos de entrenamiento bajo ninguna circunstancia.\n- PROHIBICIÓN DE PARÁFRASIS: Si no puedes extraer el texto exacto, la respuesta debe ser nula.\n- SI EL TEXTO NO ESTÁ EN EL CONTEXTO: Tu respuesta debe ser ÚNICAMENTE: \"Información no disponible en el sistema\".\n- ERROR DE ALUCINACIÓN: Cualquier texto generado que no sea una copia literal del documento será considerado un fallo crítico de auditoría.\n\n### INSTRUCCIONES DE RESPUESTA\n1. Busca el artículo solicitado en los documentos cargados.\n2. Compara el texto recuperado con el original.\n3. SI Y SOLO SI el texto es idéntico al del documento:\n   - Reproduce el texto palabra por palabra, respetando la estructura original.\n4. SI EL TEXTO NO ES IDÉNTICO O ESTÁ INCOMPLETO:\n   - Responde únicamente: \"Información no disponible en el sistema\".\n\n### FORMATO DE SALIDA\n- Transcribe el texto íntegro.\n- No añadas introducciones, resúmenes ni comentarios personales.\n- Empieza directamente con el contenido del artículo."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -3888,
+        -1344
+      ],
+      "id": "5175148c-c5dc-434a-8c8b-94815526123e",
+      "name": "AgentePR"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -3824,
+        -1120
+      ],
+      "id": "f467778e-51ed-4734-b8f0-40d811dbadfa",
+      "name": "MemoriaPR"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Utiliza esta herramienta para buscar información técnica y normativa en la base de datos de conocimientos cuando el usuario realice una consulta que requiera fundamento legal o técnico.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "normativas",
+          "mode": "list",
+          "cachedResultName": "normativas"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        -3648,
+        -1104
+      ],
+      "id": "ace37feb-fbc2-49e6-afe4-afb7f0f81f4e",
+      "name": "BDPR",
+      "credentials": {
+        "qdrantApi": {
+          "id": "iJ6tqPTiw0wFyJRl",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -3616,
+        -912
+      ],
+      "id": "9ef0c632-3ade-42a2-86b2-bd8ec3f3c98b",
+      "name": "OllamaBDPR",
+      "credentials": {
+        "ollamaApi": {
+          "id": "JfQOFbv7skksCu3V",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('ContadorAdjuntos').first().json.attachmentCount }}",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "164540df-92a8-49ee-b265-095926894c97"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1a52d24f-2fb9-42fa-a051-cc2ed6e5b0d0",
+                    "leftValue": "={{ $('ContadorAdjuntos').first().json.attachmentCount }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d4c4d98e-907c-4c6c-96f6-6e515bbac669",
+                    "leftValue": "={{ $('ContadorAdjuntos').first().json.attachmentCount }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -4272,
+        -224
+      ],
+      "id": "de595b5f-b038-47df-804e-bb4056e8a887",
+      "name": "RouterAdjuntos"
+    },
+    {
+      "parameters": {
+        "jsCode": "const triggerData = $('When chat message received').first();\n$input.first().binary = triggerData.binary;\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3824,
+        -208
+      ],
+      "id": "e4732df3-a637-40dd-b4f2-3d51a9190f86",
+      "name": "CargadorPDF"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -4464,
+        208
+      ],
+      "id": "4614b89a-3f93-43cf-85b7-3e9e1540585d",
+      "name": "ChatCortesia",
+      "webhookId": "7fcd1d33-6b82-4b4b-a00b-5baf4829ef41"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -2176,
+        -608
+      ],
+      "id": "43a1b655-8fe1-4763-8ada-9c15aed29250",
+      "name": "ChatCompliance",
+      "webhookId": "596a94c7-dfaf-4de5-bff0-4f650aef3f8e"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        -3504,
+        -1344
+      ],
+      "id": "e2dc1c99-9664-4aa6-bb80-5be44e354a3b",
+      "name": "ChatPR",
+      "webhookId": "6d207916-be05-44e3-8f7f-3a5438d236bc"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "ContadorAdjuntos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "ClasificadorPDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AgenteCompliance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ChatErrorPDFNoValido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ContadorAdjuntos": {
+      "main": [
+        [
+          {
+            "node": "Portero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Portero": {
+      "main": [
+        [
+          {
+            "node": "RouterPortero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MemoriaPortero": {
+      "ai_memory": [
+        [
+          {
+            "node": "Portero",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaPortero": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Portero",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RouterPortero": {
+      "main": [
+        [
+          {
+            "node": "RouterAdjuntos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AgenteCortesia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ChatErrorOfftopic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteCortesia": {
+      "main": [
+        [
+          {
+            "node": "ChatCortesia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaCortesia": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgenteCortesia",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MemoriaCortesia": {
+      "ai_memory": [
+        [
+          {
+            "node": "AgenteCortesia",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ClasificadorPDF": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteCompliance": {
+      "main": [
+        [
+          {
+            "node": "ChatCompliance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaCompliance": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgenteCompliance",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MemoriaCompliance": {
+      "ai_memory": [
+        [
+          {
+            "node": "AgenteCompliance",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaClasificadorPDF": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ClasificadorPDF",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDCompliance": {
+      "ai_tool": [
+        [
+          {
+            "node": "AgenteCompliance",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaBDCompliance": {
+      "ai_embedding": [
+        [
+          {
+            "node": "BDCompliance",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaPR": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgentePR",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgentePR": {
+      "main": [
+        [
+          {
+            "node": "ChatPR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MemoriaPR": {
+      "ai_memory": [
+        [
+          {
+            "node": "AgentePR",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BDPR": {
+      "ai_tool": [
+        [
+          {
+            "node": "AgentePR",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OllamaBDPR": {
+      "ai_embedding": [
+        [
+          {
+            "node": "BDPR",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RouterAdjuntos": {
+      "main": [
+        [
+          {
+            "node": "AgentePR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CargadorPDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ChatErrorAdjuntos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CargadorPDF": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c1a015ae-ad38-450d-8408-85f0b1ebb9b2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d2f1fb0dcd8536ed50079aab62e9b6d693243486f7075cd3a0e3d280ae41196c"
+  },
+  "nodeGroups": [],
+  "id": "2h6oG76HIymt3CgQ",
+  "tags": []
+}

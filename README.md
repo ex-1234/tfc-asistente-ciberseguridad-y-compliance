@@ -6,6 +6,7 @@ El proyecto se organiza de la siguiente manera:
 
 * `documentacion/`: Contiene la documentación técnica y de soporte, incluyendo el Trabajo de Fin de Curso (TFC).
 * `flujos/`: Definiciones en formato JSON de los flujos de trabajo para los agentes de auditoría.
+* `normativa/`: Archivos de normativa para alimentar el agente.
 * `prompts/`: Biblioteca de prompts optimizados para los distintos roles del sistema.
 
 ## Descripción de Componentes
